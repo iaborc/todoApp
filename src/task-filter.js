@@ -1,17 +1,10 @@
 import React from 'react';
 
-export  const TasksFilter = () => {
+export  const TasksFilter = ({filterData}) => {
+    const selected = filterData.selected ? 'selected' : '';
     return (
-        <ul className="filters">
             <li>
-                <button className="selected">All</button>
+                <button className={selected} onClick={filterData.func}>{filterData.name}</button>
             </li>
-            <li>
-                <button>Active</button>
-            </li>
-            <li>
-                <button>Completed</button>
-            </li>
-        </ul>
     );
 };

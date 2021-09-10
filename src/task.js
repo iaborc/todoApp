@@ -2,12 +2,15 @@ import React from 'react';
 import formatDistanceToNow from 'date-fns/formatDistanceToNow'
 
 export const Task = ({taskData, onCompleted, onDeleted }) => {
+    const hidden = taskData.hidden ? ' hidden' : '';
   return (
-    <li className={taskData.status}>
-        <div className="view">
-            <input className="toggle" type="checkbox" />
-            <label>
-                <span className="description" onClick={() => onCompleted(taskData.key)}>{taskData.name}</span>
+    <li className={taskData.status + hidden} >
+        <div className='view'>
+            <input className="toggle" type="checkbox" id={taskData.key}
+                   checked={taskData.status === 'completed'}
+                   onChange={() => onCompleted(taskData.key)}/>
+            <label htmlFor={taskData.key}>
+                <span className="description" >{taskData.name}</span>
                 <span className="created">
                     created {formatDistanceToNow(taskData.time, {includeSeconds: true})} ago
                 </span>
