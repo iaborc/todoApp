@@ -1,4 +1,5 @@
 import React from 'react';
+import PropTypes from 'prop-types';
 
 export  const TasksFilter = ({filterData}) => {
     const selected = filterData.selected ? 'selected' : '';
@@ -8,3 +9,11 @@ export  const TasksFilter = ({filterData}) => {
             </li>
     );
 };
+
+TasksFilter.propTypes = {
+    filterData: PropTypes.shape({
+        func: PropTypes.func,
+        name: PropTypes.string,
+        selected: PropTypes.bool,
+    }).isRequired
+}

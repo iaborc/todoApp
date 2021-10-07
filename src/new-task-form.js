@@ -1,5 +1,16 @@
 import React from 'react';
+import PropTypes from 'prop-types';
+
 export class NewTaskForm extends React.Component {
+
+    static defaultProps = {
+        onTaskAdd: () => {},
+    };
+
+    static propTypes = {
+        onTaskAdd: PropTypes.func
+    }
+
     state = {
         newTask: ''
     };
@@ -12,10 +23,12 @@ export class NewTaskForm extends React.Component {
 
     onSubmit = (e) => {
         e.preventDefault();
-        this.props.onTaskAdd(this.state.newTask);
-        this.setState({
-            newTask: ''
-        });
+        if (this.state.newTask) {
+            this.props.onTaskAdd(this.state.newTask);
+            this.setState({
+                newTask: ''
+            });
+        }
     }
 
     render(){

@@ -2,6 +2,7 @@ import React from 'react';
 import {NewTaskForm} from "./new-task-form";
 import {TaskList} from "./task-list";
 import {Footer} from "./footer";
+import formatDistanceToNow from 'date-fns/formatDistanceToNow';
 
 
 export class TodoApp extends React.Component {
@@ -10,18 +11,31 @@ export class TodoApp extends React.Component {
 
     state = {
         taskList : [
-            this.createTask('Completed task', 'completed', false, 17000),
-            this.createTask('Editing task', 'editing', true, 300000),
-            this.createTask('Active task', '', false, 300000)
+            this.createTask('Completed task', 'completed',17000),
+            this.createTask('Editing task', 'editing',300000),
+            this.createTask('Active task', '',300000)
         ],
         taskFilter:  [
             {name: 'All', selected: true, func: () => this.onAll(), key: 100},
             {name: 'Active', selected: false, func: () => this.onActive(), key: 101},
             {name: 'Completed', selected: false, func: () => this.onDone(), key: 102}
         ],
-
         taskCount: 0
     };
+
+    onTick = () => {
+        this.setState(({taskList}) => {
+            const newArr = taskList.map((el) => {
+                const newEl = {...el};
+                newEl.timeHasPassed = formatDistanceToNow(newEl.time, {includeSeconds: true});
+                return newEl;
+            });
+
+            return {
+                taskList: newArr
+            };
+        })
+    }
 
     onDeleted = (key) => {
         this.setState( ({taskList}) => {
@@ -48,30 +62,29 @@ export class TodoApp extends React.Component {
             })
             return { taskList : newArr};
         })
+        const selectedFilter = this.state.taskFilter.filter((el) => el.selected)[0];
+        selectedFilter.func();
     };
 
     onFilterSelected = (filter) => {
         const taskFilter = this.state.taskFilter
-        const newArr = taskFilter.map((f) => {
+        return taskFilter.map((f) => {
             const newEl = {...f};
-            newEl.selected = newEl.name === filter ? true : false;
+            newEl.selected = newEl.name === filter;
             return newEl;
         });
-        return newArr;
     };
 
     onActive = () => {
         this.setState( ({taskList}) => {
             const newArr = taskList.map((el) => {
                 const newEl = {...el};
-                if(el.status !== '') {
-                    newEl.hidden = true;
-                } else newEl.hidden = false;
+                newEl.hidden = el.status !== '';
                 return newEl;
             });
-            const newFilter = this.onFilterSelected('Active');
+            const newFilters = this.onFilterSelected('Active');
 
-            return {taskList: newArr, taskFilter: newFilter};
+            return {taskList: newArr, taskFilter: newFilters};
         });
     };
 
@@ -82,9 +95,9 @@ export class TodoApp extends React.Component {
                 newEl.hidden = false;
                 return newEl;
             });
-            const newFilter = this.onFilterSelected('All');
+            const newFilters = this.onFilterSelected('All');
 
-            return {taskList: newArr, taskFilter: newFilter};
+            return {taskList: newArr, taskFilter: newFilters};
         });
     };
 
@@ -92,18 +105,15 @@ export class TodoApp extends React.Component {
         this.setState(({taskList}) => {
             const newArr = taskList.map((el) => {
                 const newEl = {...el};
-                if(el.status !== 'completed') {
-                    newEl.hidden = true;
-                } else newEl.hidden = false;
+                newEl.hidden = el.status !== 'completed';
                 return newEl;
             });
-            const newFilter = this.onFilterSelected('Completed');
-            return {taskList: newArr, taskFilter: newFilter};
+            const newFilters = this.onFilterSelected('Completed');
+            return {taskList: newArr, taskFilter: newFilters};
             })
     };
 
     clearCompleted = () => {
-        console.log('work');
         this.setState(({taskList}) => {
             const newArr = taskList.reduce((acc, el) => {
                 const newEl = {...el};
@@ -116,13 +126,14 @@ export class TodoApp extends React.Component {
 
 
 
-    createTask(newTodo, status = '', editing = false, timeLeft = 0)  {
+    createTask(newTodo, status = '', time = 0)  {
+        const timeHasPassed = formatDistanceToNow(Date.now() - time, {includeSeconds: true});
         return {
             status: status,
             name: newTodo,
             key: this.maxKey++,
-            editing: editing,
-            time: Date.now() - timeLeft
+            time: Date.now() - time,
+            timeHasPassed: timeHasPassed
         };
     }
 
@@ -130,8 +141,41 @@ export class TodoApp extends React.Component {
         const currentTasks = this.state.taskList;
         const newTask = this.createTask(newTodo);
         this.setState({taskList: [...currentTasks, newTask]});
+        const selectedFilter = this.state.taskFilter.filter((el) => el.selected)[0];
+        selectedFilter.func();
     };
 
+    onEdit = (key) => {
+        this.setState(({taskList}) => {
+            const indx = taskList.findIndex((task) => task.key === key);
+            const newArr = taskList.map((el, i) => {
+                let newEl = {...el};
+                if (i === indx) newEl.status = 'editing';
+                return newEl;
+            });
+            return {
+                taskList: newArr
+            };
+        });
+    }
+    onSave = (key, newName) => {
+        this.setState(({taskList}) => {
+            const indx = taskList.findIndex((task) => task.key === key);
+            const newArr = taskList.map((el, i) => {
+                let newEl = {...el};
+                if (i === indx) {
+                    newEl.status = '';
+                    newEl.name = newName;
+                }
+                return newEl;
+            });
+            return {
+                taskList: newArr
+            };
+        });
+        const selectedFilter = this.state.taskFilter.filter((el) => el.selected)[0];
+        selectedFilter.func();
+    }
 
     render() {
         const todoCount = this.state.taskList.filter((el) => el.status === '').length;
@@ -142,7 +186,10 @@ export class TodoApp extends React.Component {
                     <NewTaskForm onTaskAdd={(newTodo) => this.onTaskAdd(newTodo)}/>
                 </header>
                 <section className='main'>
-                    <TaskList todos={this.state.taskList} onCompleted={(key) => this.onCompleted(key)} onDeleted = {(key) => this.onDeleted(key)}/>
+                    <TaskList todos={this.state.taskList} onCompleted={(key) => this.onCompleted(key)}
+                              onDeleted={(key) => this.onDeleted(key)} onEdit={this.onEdit} onSave={this.onSave}
+                              onTick={this.onTick}
+                    />
                 </section>
                 <Footer taskFilter={this.state.taskFilter} clearCompleted={() => this.clearCompleted()} todoCount={todoCount}/>
             </section>
